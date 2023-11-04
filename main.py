@@ -8,7 +8,7 @@ from aiogram import Bot, Dispatcher, types
 load_dotenv()
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
-
+CHANNEL = "@baphometme"
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
