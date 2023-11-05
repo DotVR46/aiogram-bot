@@ -1,5 +1,6 @@
 import aiohttp
 import asyncio
+import csv
 from bs4 import BeautifulSoup
 
 
@@ -22,32 +23,45 @@ async def fetch_url(url):
             return await response.text()
 
 
-async def parse_page(url):
+async def parse_page(url, base_url):
     soup = await get_soup(url)
 
-    news_titles = []
+    news_links = []
     for news_item in soup.find_all("div", class_="article"):
-        title = news_item.find("a").text.strip()
-        news_titles.append(title)
+        link = news_item.find("a").get("href")
+        img = news_item.find("img").get("src")[1:]
+        item = [
+            f"{base_url}news/{link}"
+            if "tasks" not in link
+            else f"{base_url}{link[1:]}",
+            f"{base_url}{img}",
+        ]
+        news_links.append(item)
 
-    return news_titles
+    return news_links
 
 
 async def main():
-    base_url = "https://itproger.com/news/"
+    base_url = "https://itproger.com/"
     # num_pages = 5  # Количество страниц для парсинга
 
-    soup = await get_soup(base_url)
+    soup = await get_soup(base_url + "news/")
     num_pages = await get_num_pages(soup)
-    tasks = [parse_page(f"{base_url}page-{page}") for page in range(1, int(num_pages) + 1)]
+    tasks = [
+        parse_page(f"{base_url}news/page-{page}", base_url)
+        for page in range(1, int(num_pages) + 1)
+    ]
     results = await asyncio.gather(*tasks)
 
-    all_news_titles = []
+    all_news_links = []
     for result in results:
-        all_news_titles.extend(result)
+        all_news_links.extend(result)
 
-    for i, title in enumerate(all_news_titles, start=1):
-        print(f"{i}. {title}")
+    # for i, link in enumerate(all_news_links, start=1):
+    #     print(f"{i}. {base_url}{link}")
+    with open("itproger.csv", "w") as file:
+        writer = csv.writer(file)
+        writer.writerows(all_news_links)
 
 
 if __name__ == "__main__":
