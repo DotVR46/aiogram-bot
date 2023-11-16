@@ -41,6 +41,8 @@ async def parse_page(url, base_url):
     return news_links
 
 
+# TODO: Сохранять новые посты сразу в БД
+# TODO: Парсить только свежие посты. Проверять дату каждого поста и сравнивать с последней
 async def main():
     base_url = "https://itproger.com/"
     # num_pages = 5  # Количество страниц для парсинга
