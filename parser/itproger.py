@@ -1,3 +1,5 @@
+import os
+
 import aiohttp
 import asyncio
 import csv
@@ -23,20 +25,22 @@ async def fetch_url(url):
             return await response.text()
 
 
-async def parse_page(url, base_url):
+async def parse_page(url, base_url, existing_links):
     soup = await get_soup(url)
 
     news_links = []
     for news_item in soup.find_all("div", class_="article"):
         link = news_item.find("a").get("href")
         img = news_item.find("img").get("src")[1:]
-        item = [
+        full_link = (
             f"{base_url}news/{link}"
             if "tasks" not in link
-            else f"{base_url}{link[1:]}",
-            f"{base_url}{img}",
-        ]
-        news_links.append(item)
+            else f"{base_url}{link[1:]}"
+        )
+        if full_link not in existing_links:
+            item = [full_link, f"{base_url}{img}"]
+            news_links.append(item)
+            existing_links.add(full_link)
 
     return news_links
 
@@ -46,11 +50,18 @@ async def parse_page(url, base_url):
 async def main():
     base_url = "https://itproger.com/"
     # num_pages = 5  # Количество страниц для парсинга
+    existing_links = set()
+
+    # Load existing links from the CSV file
+    if os.path.exists("itproger.csv"):
+        with open("itproger.csv", "r") as file:
+            reader = csv.reader(file)
+            existing_links = set(row[0] for row in reader)
 
     soup = await get_soup(base_url + "news/")
     num_pages = await get_num_pages(soup)
     tasks = [
-        parse_page(f"{base_url}news/page-{page}", base_url)
+        parse_page(f"{base_url}news/page-{page}", base_url, existing_links)
         for page in range(1, int(num_pages) + 1)
     ]
     results = await asyncio.gather(*tasks)
@@ -61,7 +72,7 @@ async def main():
 
     # for i, link in enumerate(all_news_links, start=1):
     #     print(f"{i}. {base_url}{link}")
-    with open("itproger.csv", "w") as file:
+    with open("itproger.csv", "a", newline='') as file:
         writer = csv.writer(file)
         writer.writerows(all_news_links)
 
