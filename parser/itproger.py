@@ -44,24 +44,26 @@ async def parse_page(url, base_url, existing_links):
 
 async def main():
     base_url = "https://itproger.com/"
-    # existing_links = set()
 
-    existing_posts = session.query(Post.post_url).all()
-    existing_links = set(row[0] for row in existing_posts)
+    async with session:
+        existing_posts = await session.execute(Post.__table__.select())
+        existing_links = set(row[0] for row in existing_posts)
 
-    soup = await get_soup(base_url + "news/")
-    num_pages = await get_num_pages(soup)
-    tasks = [
-        parse_page(f"{base_url}news/page-{page}", base_url, existing_links)
-        for page in range(1, int(num_pages) + 1)
-    ]
-    results = await asyncio.gather(*tasks)
+        soup = await get_soup(base_url + "news/")
+        num_pages = await get_num_pages(soup)
 
-    for result in results:
-        for post in result:
-            new_post = Post(post_url=post["post_url"], image_url=post["image_url"])
-            session.add(new_post)
-            session.commit()
+        tasks = [
+            parse_page(f"{base_url}news/page-{page}", base_url, existing_links)
+            for page in range(1, int(num_pages) + 1)
+        ]
+        results = await asyncio.gather(*tasks)
+
+        for result in results:
+            for post in result:
+                new_post = Post(post_url=post["post_url"], image_url=post["image_url"])
+                session.add(new_post)
+
+        await session.commit()
 
 
 if __name__ == "__main__":
