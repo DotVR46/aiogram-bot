@@ -1,9 +1,8 @@
-import os
-
 import aiohttp
 import asyncio
-import csv
 from bs4 import BeautifulSoup
+
+from database.connection import session, Post
 
 
 async def get_soup(url) -> BeautifulSoup():
@@ -33,30 +32,22 @@ async def parse_page(url, base_url, existing_links):
         link = news_item.find("a").get("href")
         img = news_item.find("img").get("src")[1:]
         full_link = (
-            f"{base_url}news/{link}"
-            if "tasks" not in link
-            else f"{base_url}{link[1:]}"
+            f"{base_url}news/{link}" if "tasks" not in link else f"{base_url}{link[1:]}"
         )
         if full_link not in existing_links:
-            item = [full_link, f"{base_url}{img}"]
+            item = {"post_url": full_link, "image_url": f"{base_url}{img}"}
             news_links.append(item)
             existing_links.add(full_link)
 
     return news_links
 
 
-# TODO: Сохранять новые посты сразу в БД
-# TODO: Парсить только свежие посты. Проверять дату каждого поста и сравнивать с последней
 async def main():
     base_url = "https://itproger.com/"
-    # num_pages = 5  # Количество страниц для парсинга
-    existing_links = set()
+    # existing_links = set()
 
-    # Load existing links from the CSV file
-    if os.path.exists("itproger.csv"):
-        with open("itproger.csv", "r") as file:
-            reader = csv.reader(file)
-            existing_links = set(row[0] for row in reader)
+    existing_posts = session.query(Post.post_url).all()
+    existing_links = set(row[0] for row in existing_posts)
 
     soup = await get_soup(base_url + "news/")
     num_pages = await get_num_pages(soup)
@@ -66,15 +57,11 @@ async def main():
     ]
     results = await asyncio.gather(*tasks)
 
-    all_news_links = []
     for result in results:
-        all_news_links.extend(result)
-
-    # for i, link in enumerate(all_news_links, start=1):
-    #     print(f"{i}. {base_url}{link}")
-    with open("itproger.csv", "a", newline='') as file:
-        writer = csv.writer(file)
-        writer.writerows(all_news_links)
+        for post in result:
+            new_post = Post(post_url=post["post_url"], image_url=post["image_url"])
+            session.add(new_post)
+            session.commit()
 
 
 if __name__ == "__main__":

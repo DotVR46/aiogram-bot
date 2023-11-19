@@ -1,3 +1,4 @@
 .env
 .idea
+parser/db.sqlite
 database/db.sqlite
