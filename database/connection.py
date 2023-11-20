@@ -30,6 +30,7 @@ class Post(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     image_url: Mapped[str] = mapped_column(String(255))
     post_url: Mapped[str] = mapped_column(String(255))
+    post_title: Mapped[str] = mapped_column(String(255))
     posted = Column(Boolean, default=False)
 
 async def create_all():
