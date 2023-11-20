@@ -30,12 +30,17 @@ async def parse_page(url, base_url, existing_links):
     news_links = []
     for news_item in soup.find_all("div", class_="article"):
         link = news_item.find("a").get("href")
+        title = news_item.find("span").text
         img = news_item.find("img").get("src")[1:]
         full_link = (
             f"{base_url}news/{link}" if "tasks" not in link else f"{base_url}{link[1:]}"
         )
         if full_link not in existing_links:
-            item = {"post_url": full_link, "image_url": f"{base_url}{img}"}
+            item = {
+                "post_url": full_link,
+                "image_url": f"{base_url}{img}",
+                "post_title": title,
+            }
             news_links.append(item)
             existing_links.add(full_link)
 
@@ -60,7 +65,7 @@ async def main():
 
         for result in results:
             for post in result:
-                new_post = Post(post_url=post["post_url"], image_url=post["image_url"])
+                new_post = Post(post_url=post["post_url"], image_url=post["image_url"], post_title=post["post_title"])
                 session.add(new_post)
 
         await session.commit()
