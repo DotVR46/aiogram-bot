@@ -10,7 +10,7 @@ from database.connection import session, Post
 load_dotenv()
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
-CHANNEL = "@baphometme"
+CHANNEL = os.environ.get("CHANNEL_NAME")
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
@@ -30,15 +30,8 @@ async def send_news():
                 chat_id=CHANNEL,
                 photo=news_item.image_url,
                 caption=f"""<b>{news_item.post_title}</b>\n \n {news_item.post_url}""",
-                # caption=news_item.post_url,
                 parse_mode=ParseMode.HTML,
             )
-
-            # await bot.send_message(
-            #     chat_id=CHANNEL,
-            #     text=news_item.post_url,
-            #     parse_mode=ParseMode.HTML,
-            # )
 
             # Обновляем флаг "опубликовано" в базе данных
             await session.execute(
@@ -53,7 +46,7 @@ async def send_news():
 async def hourly_schedule():
     while True:
         await send_news()
-        await asyncio.sleep(360)  # Подождать 1 час перед следующим запуском
+        await asyncio.sleep(3600)  # Подождать 1 час перед следующим запуском
 
 
 if __name__ == "__main__":
@@ -65,6 +58,8 @@ if __name__ == "__main__":
         loop.run_until_complete(bot.send_message(chat_id=CHANNEL, text="Бот запущен!"))
         loop.run_forever()
     except KeyboardInterrupt:
-        loop.run_until_complete(bot.send_message(chat_id=CHANNEL, text="Бот остановлен!"))
+        loop.run_until_complete(
+            bot.send_message(chat_id=CHANNEL, text="Бот остановлен!")
+        )
     finally:
         loop.run_until_complete(bot.session.close())
