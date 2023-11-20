@@ -29,7 +29,7 @@ async def send_news():
             await bot.send_photo(
                 chat_id=CHANNEL,
                 photo=news_item.image_url,
-                caption=f"<b>{news_item.post_title}</b>\n {news_item.post_url}",
+                caption=f"""<b>{news_item.post_title}</b>\n \n {news_item.post_url}""",
                 # caption=news_item.post_url,
                 parse_mode=ParseMode.HTML,
             )
@@ -57,17 +57,14 @@ async def hourly_schedule():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.INFO)
     loop = asyncio.get_event_loop()
     loop.create_task(hourly_schedule())  # Запустить планировщик каждый час
 
     try:
-        loop.run_until_complete(
-            bot.send_message(chat_id=CHANNEL, text="Bot has been started!")
-        )
         loop.run_until_complete(bot.send_message(chat_id=CHANNEL, text="Бот запущен!"))
         loop.run_forever()
     except KeyboardInterrupt:
-        pass
+        loop.run_until_complete(bot.send_message(chat_id=CHANNEL, text="Бот остановлен!"))
     finally:
         loop.run_until_complete(bot.session.close())
