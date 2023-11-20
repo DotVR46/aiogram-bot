@@ -29,7 +29,8 @@ async def send_news():
             await bot.send_photo(
                 chat_id=CHANNEL,
                 photo=news_item.image_url,
-                caption=news_item.post_url,
+                caption=f"<b>{news_item.post_title}</b>\n {news_item.post_url}",
+                # caption=news_item.post_url,
                 parse_mode=ParseMode.HTML,
             )
 
