@@ -2,3 +2,4 @@
 .idea
 parser/db.sqlite
 database/db.sqlite
+database/__pycache__/
